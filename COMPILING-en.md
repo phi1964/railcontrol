@@ -18,6 +18,8 @@ RailControl requires a posix-environement. Windows is not posix compiliant, but 
 gcc-g++ 
 make 
 git
+libsqlite3-devel
+zlib-devel
 ```
 
 After the cygwin installation one can get the sources in a cygwin terminal with:
@@ -62,7 +64,7 @@ There is a 32 bit build of cygwin. But there is no more support for the 32 bit v
 On debian based systems the required developer tools can be installed with (this can be different on non debian Linux distributions):
 
 ```
-sudo apt-get install g++ binutils make git
+sudo apt-get install g++ binutils make git libsqlite3-dev zlib1g-dev
 ```
 
 After installing the developer tools one can get the sources with:
@@ -104,6 +106,12 @@ The required developer tools can be installed in a terminal with:
 
 ```
 sudo xcode-select --install
+```
+
+SQLite and zlib can be installed with [Homebrew](https://brew.sh/):
+
+```
+brew install sqlite zlib
 ```
 
 After installing the developer tools one can get the sources with:

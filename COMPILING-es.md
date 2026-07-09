@@ -18,6 +18,8 @@ RailControl necesita un entorno posix. Windows no ofrece un entorno posix, pero 
 gcc-g++ 
 make 
 git
+libsqlite3-devel
+zlib-devel
 ```
 
 Despues de instalar cygwin se puede consegir el codigo fuente con:
@@ -58,7 +60,7 @@ Hay una version de cygwin con 32 bit, pero esta version no está más soportado.
 Se puede instalar las heremientas requerido con:
 
 ```
-sudo apt-get install g++ binutils make git
+sudo apt-get install g++ binutils make git libsqlite3-dev zlib1g-dev
 ```
 
 Despues de instalar cygwin se puede consegir el codigo fuente con:
@@ -100,6 +102,12 @@ Se puede instalar las heremientas requerido con:
 
 ```
 sudo xcode-select --install
+```
+
+SQLite y zlib se pueden instalar con [Homebrew](https://brew.sh/):
+
+```
+brew install sqlite zlib
 ```
 
 Despues de instalar cygwin se puede consegir el codigo fuente con:
