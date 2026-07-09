@@ -33,12 +33,15 @@ jobs:
         with:
           packages: gcc-core gcc-g++ make libsqlite3-devel zlib-devel
       - name: Build
-        run: |
-          cores=${NUMBER_OF_PROCESSORS:-}
-          if [ -z "${cores}" ]; then
-            cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
-          fi
-          make -j"${cores}"
+        if: runner.os == 'Windows'
+        run: make -j"${NUMBER_OF_PROCESSORS:-2}"
+        shell: bash
+        env:
+          CC: gcc
+          CXX: g++
+      - name: Build
+        if: runner.os != 'Windows'
+        run: make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
         shell: bash
         env:
           CC: gcc
@@ -69,12 +72,8 @@ jobs:
           fetch-depth: 0
       - name: Build
         run: |
-          cores=${NUMBER_OF_PROCESSORS:-}
-          if [ -z "${cores}" ]; then
-            cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
-          fi
           cmake -B build
-          cmake --build build -j"${cores}"
+          cmake --build build -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
       - name: Set up Python for tests
         uses: actions/setup-python@v6
         with:
