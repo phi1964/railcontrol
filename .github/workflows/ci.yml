@@ -31,7 +31,7 @@ jobs:
         uses: cygwin/cygwin-install-action@v6
         if: runner.os == 'Windows'
         with:
-          packages: gcc-core gcc-g++
+          packages: gcc-core gcc-g++ make libsqlite3-devel zlib-devel
       - name: Get number of CPU cores
         uses: SimenB/github-actions-cpu-cores@v2
         id: cpu-cores
