@@ -46,7 +46,7 @@ namespace Storage
 	{
 		Utils::Utils::RemoveOldBackupFiles (logger, filename, keepBackups);
 		logger->Info(Languages::TextOpeningSQLite, filename);
-		int rc = sqlite3_open(filename.c_str(), &db);
+		const int rc = sqlite3_open(filename.c_str(), &db);
 		if (rc)
 		{
 			logger->Error(Languages::TextUnableToOpenSQLite, sqlite3_errmsg(db));
@@ -57,7 +57,7 @@ namespace Storage
 
 		// check if needed tables exist
 		map<string, bool> tablenames;
-		const char* query = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;";
+		const char* const query = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;";
 		bool ret = Execute(query, CallbackListTables, &tablenames);
 		if (!ret)
 		{
@@ -67,7 +67,7 @@ namespace Storage
 		// create hardware table if needed
 		if (tablenames["hardware"] == false)
 		{
-			bool ret = CreateTableHardware();
+			const bool ret = CreateTableHardware();
 			if (!ret)
 			{
 				return;
@@ -77,7 +77,7 @@ namespace Storage
 		// create objects table if needed
 		if (tablenames["objects"] == false)
 		{
-			bool ret = CreateTableObjects();
+			const bool ret = CreateTableObjects();
 			if (!ret)
 			{
 				return;
@@ -85,7 +85,7 @@ namespace Storage
 		}
 
 		// create relations table if needed
-		string tableNameRelations = "relations";
+		const string tableNameRelations = "relations";
 		if (tablenames[tableNameRelations] == true)
 		{
 			ret = CheckTableRelations();
@@ -102,7 +102,7 @@ namespace Storage
 		// create settings table if needed
 		if (tablenames["settings"] == false)
 		{
-			bool ret = CreateTableSettings();
+			const bool ret = CreateTableSettings();
 			if (!ret)
 			{
 				return;
@@ -131,7 +131,7 @@ namespace Storage
 
 	int SQLite::CallbackListTables(void* v, int argc, char **argv, __attribute__((unused)) char **colName)
 	{
-		map<string, bool>* tablenames = static_cast<map<string, bool>*>(v);
+		map<string, bool>* const tablenames = static_cast<map<string, bool>*>(v);
 		if (argc != 1)
 		{
 			return 0;
@@ -143,7 +143,7 @@ namespace Storage
 	bool SQLite::DropTable(const string table)
 	{
 		logger->Info(Languages::TextDroppingTable, table);
-		string query = "DROP TABLE " + table + ";";
+		const string query = "DROP TABLE " + table + ";";
 		return Execute(query);
 	}
 
@@ -166,7 +166,7 @@ namespace Storage
 	bool SQLite::CreateTableObjects()
 	{
 		logger->Info(Languages::TextCreatingTable, "objects");
-		const char* query = "CREATE TABLE objects ("
+		const char* const query = "CREATE TABLE objects ("
 			"objecttype UNSIGNED TINYINT, "
 			"objectid UNSIGNED SHORTINT, "
 			"name VARCHAR(50), "
@@ -192,7 +192,7 @@ namespace Storage
 	bool SQLite::CreateTableSettings()
 	{
 		logger->Info(Languages::TextCreatingTable, "settings");
-		const char* query =  "CREATE TABLE settings ("
+		const char* const query =  "CREATE TABLE settings ("
 			"key TINYTEXT, "
 			"value SHORTTEXT,"
 			"PRIMARY KEY (key));";
@@ -221,7 +221,7 @@ namespace Storage
 			return false;
 		}
 
-		string name = "relations";
+		const string name = "relations";
 		if (tableInfos.size() != 6)
 		{
 			return DropTable(name) && CreateTableRelations(name);
@@ -277,7 +277,7 @@ namespace Storage
 
 	int SQLite::CallbackTableInfo(void* v, int argc, char **argv, __attribute__((unused)) char **colName)
 	{
-		vector<TableInfo>* tableInfos = static_cast<vector<TableInfo>*>(v);
+		vector<TableInfo>* const tableInfos = static_cast<vector<TableInfo>*>(v);
 		if (argc != 6)
 		{
 			return 0;
@@ -296,7 +296,7 @@ namespace Storage
 
 	void SQLite::SaveHardwareParams(const Hardware::HardwareParams& hardwareParams)
 	{
-		string query = "INSERT OR REPLACE INTO hardware VALUES ("
+		const string query = "INSERT OR REPLACE INTO hardware VALUES ("
 			+ to_string(hardwareParams.GetControlID()) + ", "
 			+ to_string(hardwareParams.GetHardwareType()) + ", '"
 			+ EscapeString(hardwareParams.GetName()) + "', '"
@@ -310,21 +310,21 @@ namespace Storage
 
 	void SQLite::AllHardwareParams(std::map<ControlID, Hardware::HardwareParams*>& hardwareParams)
 	{
-		const char* query = "SELECT controlid, hardwaretype, name, arg1, arg2, arg3, arg4, arg5 FROM hardware ORDER BY controlid;";
+		const char* const query = "SELECT controlid, hardwaretype, name, arg1, arg2, arg3, arg4, arg5 FROM hardware ORDER BY controlid;";
 		Execute(query, CallbackAllHardwareParams, &hardwareParams);
 	}
 
 	// callback read hardwareparams
 	int SQLite::CallbackAllHardwareParams(void* v, int argc, char **argv, __attribute__((unused)) char **colName)
 	{
-		map<ControlID,HardwareParams*>* hardwareParams = static_cast<map<ControlID,HardwareParams*>*>(v);
+		map<ControlID,HardwareParams*>* const hardwareParams = static_cast<map<ControlID,HardwareParams*>*>(v);
 		if (argc != 8)
 		{
 			return 0;
 		}
-		ControlID controlID = Utils::Integer::StringToInteger(argv[0]);
+		const ControlID controlID = Utils::Integer::StringToInteger(argv[0]);
 
-		HardwareParams* params = new HardwareParams(controlID, static_cast<HardwareType>(Utils::Integer::StringToInteger(argv[1])), argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
+		HardwareParams* const params = new HardwareParams(controlID, static_cast<HardwareType>(Utils::Integer::StringToInteger(argv[1])), argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
 		(*hardwareParams)[controlID] = params;
 		return 0;
 	}
@@ -332,14 +332,14 @@ namespace Storage
 	// delete control
 	void SQLite::DeleteHardwareParams(const ControlID controlID)
 	{
-		string query = "DELETE FROM hardware WHERE controlid = " + to_string(controlID) + ";";
+		const string query = "DELETE FROM hardware WHERE controlid = " + to_string(controlID) + ";";
 		Execute(query);
 	}
 
 	// save DataModel object
 	void SQLite::SaveObject(const ObjectType objectType, const ObjectID objectID, const std::string& name, const std::string& object)
 	{
-		string query = "INSERT OR REPLACE INTO objects (objecttype, objectid, name, object) VALUES ("
+		const string query = "INSERT OR REPLACE INTO objects (objecttype, objectid, name, object) VALUES ("
 			+ to_string(objectType) + ", "
 			+ to_string(objectID) + ", '"
 			+ EscapeString(name) + "', '"
@@ -350,7 +350,7 @@ namespace Storage
 	// delete DataModel object
 	void SQLite::DeleteObject(const ObjectType objectType, const ObjectID objectID)
 	{
-		string query = "DELETE FROM objects WHERE objecttype = " + to_string(objectType)
+		const string query = "DELETE FROM objects WHERE objecttype = " + to_string(objectType)
 			+ " AND objectid = " + to_string(objectID) + ";";
 		Execute(query);
 	}
@@ -358,14 +358,14 @@ namespace Storage
 	// read DataModel objects
 	void SQLite::ObjectsOfType(const ObjectType objectType, vector<string>& objects)
 	{
-		string query = "SELECT object FROM objects WHERE objecttype = " + to_string(objectType) + " ORDER BY objectid;";
+		const string query = "SELECT object FROM objects WHERE objecttype = " + to_string(objectType) + " ORDER BY objectid;";
 		Execute(query, CallbackStringVector, &objects);
 	}
 
 	// save DataModel relation
 	void SQLite::SaveRelation(const DataModel::Relation::RelationType type, const ObjectID objectID1, const ObjectType objectType2, const ObjectID objectID2, const Priority priority, const std::string& relation)
 	{
-		string query = "INSERT OR REPLACE INTO relations (type, objectid1, objecttype2, objectid2, priority, relation) VALUES ("
+		const string query = "INSERT OR REPLACE INTO relations (type, objectid1, objecttype2, objectid2, priority, relation) VALUES ("
 			+ to_string(type) + ", "
 			+ to_string(objectID1) + ", "
 			+ to_string(objectType2) + ", "
@@ -378,7 +378,7 @@ namespace Storage
 	// delete DataModel relation
 	void SQLite::DeleteRelationsFrom(const DataModel::Relation::RelationType type, const ObjectID objectID)
 	{
-		string query = "DELETE FROM relations WHERE type = " + to_string(type)
+		const string query = "DELETE FROM relations WHERE type = " + to_string(type)
 			+ " AND objectid1 = " + to_string(objectID) + ";";
 		Execute(query);
 	}
@@ -386,7 +386,7 @@ namespace Storage
 	// delete DataModel relation
 	void SQLite::DeleteRelationsTo(const ObjectType objectType, const ObjectID objectID)
 	{
-		string query = "DELETE FROM relations WHERE objecttype2 = " + to_string(objectType)
+		const string query = "DELETE FROM relations WHERE objecttype2 = " + to_string(objectType)
 			+ " AND objectid2 = " + to_string(objectID) + ";";
 		Execute(query);
 	}
@@ -394,7 +394,7 @@ namespace Storage
 	// read DataModel relations
 	void SQLite::RelationsFrom(const DataModel::Relation::RelationType type, const ObjectID objectID, vector<string>& relations)
 	{
-		string query = "SELECT relation FROM relations WHERE type = " + to_string(type)
+		const string query = "SELECT relation FROM relations WHERE type = " + to_string(type)
 			+ " AND objectid1 = " + to_string(objectID) + " ORDER BY priority ASC;";
 		Execute(query, CallbackStringVector, &relations);
 	}
@@ -402,7 +402,7 @@ namespace Storage
 	// read DataModel relations
 	void SQLite::RelationsTo(const ObjectType objectType, const ObjectID objectID, vector<string>& relations)
 	{
-		string query = "SELECT relation FROM relations WHERE objecttype2 = " + to_string(objectType)
+		const string query = "SELECT relation FROM relations WHERE objecttype2 = " + to_string(objectType)
 			+ " AND objectid2 = " + to_string(objectID) + ";";
 		Execute(query, CallbackStringVector, &relations);
 	}
@@ -415,8 +415,8 @@ namespace Storage
 	string SQLite::GetSetting(const string& key)
 	{
 		vector<string> values;
-		string query = "SELECT value FROM settings WHERE key = '" + EscapeString(key) + "';";
-		bool ret = Execute(query, CallbackStringVector, &values);
+		const string query = "SELECT value FROM settings WHERE key = '" + EscapeString(key) + "';";
+		const bool ret = Execute(query, CallbackStringVector, &values);
 		if (ret == false || values.size() == 0)
 		{
 			return "";
@@ -428,7 +428,7 @@ namespace Storage
 	// callback read all DataModel objects/relations
 	int SQLite::CallbackStringVector(void* v, int argc, char **argv, __attribute__((unused)) char **colName)
 	{
-		vector<string>* objects = static_cast<vector<string>*>(v);
+		vector<string>* const objects = static_cast<vector<string>*>(v);
 		if (argc != 1)
 		{
 			return 0;
@@ -455,10 +455,10 @@ namespace Storage
 		}
 
 		char* dbError = nullptr;
-		int rc = sqlite3_exec(db, query, callback, result, &dbError);
+		const int rc = sqlite3_exec(db, query, callback, result, &dbError);
 		if (rc == SQLITE_OK)
 		{
-			int affected = sqlite3_changes(db);
+			const int affected = sqlite3_changes(db);
 
 			if (affected)
 			{
