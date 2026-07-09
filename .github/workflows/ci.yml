@@ -32,11 +32,10 @@ jobs:
         if: runner.os == 'Windows'
         with:
           packages: gcc-core gcc-g++ make libsqlite3-devel zlib-devel
-      - name: Get number of CPU cores
-        uses: SimenB/github-actions-cpu-cores@v2
-        id: cpu-cores
       - name: Build
-        run: make -j${{ steps.cpu-cores.outputs.count }}
+        run: |
+          cores=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
+          make -j"${cores}"
         shell: bash
         env:
           CC: gcc
@@ -65,13 +64,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Get number of CPU cores
-        uses: SimenB/github-actions-cpu-cores@v2
-        id: cpu-cores
       - name: Build
         run: |
+          cores=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
           cmake -B build
-          cmake --build build -j${{ steps.cpu-cores.outputs.count }}
+          cmake --build build -j"${cores}"
       - name: Set up Python for tests
         uses: actions/setup-python@v6
         with:
@@ -92,6 +89,5 @@ jobs:
     if: always()
     steps:
       - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@release/v1
-        with:
-          jobs: ${{ toJSON(needs) }}
+        if: ${{ needs.make.result != 'success' || needs.cmake.result != 'success' }}
+        run: exit 1
