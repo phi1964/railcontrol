@@ -34,7 +34,10 @@ jobs:
           packages: gcc-core gcc-g++ make libsqlite3-devel zlib-devel
       - name: Build
         run: |
-          cores=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
+          cores=${NUMBER_OF_PROCESSORS:-}
+          if [ -z "${cores}" ]; then
+            cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
+          fi
           make -j"${cores}"
         shell: bash
         env:
@@ -66,7 +69,10 @@ jobs:
           fetch-depth: 0
       - name: Build
         run: |
-          cores=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
+          cores=${NUMBER_OF_PROCESSORS:-}
+          if [ -z "${cores}" ]; then
+            cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
+          fi
           cmake -B build
           cmake --build build -j"${cores}"
       - name: Set up Python for tests
