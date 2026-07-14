@@ -379,7 +379,7 @@ namespace DataModel
 
 		for (auto& feedbackRelation : feedbacks)
 		{
-			const DataModel::Feedback* feedback = manager->GetFeedbackUnlocked(feedbackRelation->ObjectID2());
+			const DataModel::Feedback* feedback = manager->GetFeedback(feedbackRelation->ObjectID2());
 			if (!feedback)
 			{
 				continue;

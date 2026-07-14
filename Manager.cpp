@@ -1588,9 +1588,8 @@ Logger::Logger* Manager::CheckFreeingTrack(const DataModel::ObjectIdentifier& lo
 {
 	const ObjectType type = locoBaseIdentifier.GetObjectType();
 	std::mutex& mutex = (type == ObjectTypeLoco ? locoMutex : multipleUnitMutex);
-	LocoConfig locoConfig;
+	LocoBase* locoBase = nullptr;
 	{
-		LocoBase* locoBase = nullptr;
 		std::lock_guard<std::mutex> guard(mutex);
 		if (type == ObjectTypeLoco)
 		{
@@ -1605,15 +1604,16 @@ Logger::Logger* Manager::CheckFreeingTrack(const DataModel::ObjectIdentifier& lo
 		{
 			return nullptr;
 		}
-
-		const bool freeOK = locoBase->CheckFreeingTrack(trackID);
-		if (!freeOK)
-		{
-			return nullptr;
-		}
-
-		return locoBase->GetLogger();
 	}
+
+	// Use locoBase outside the map mutex to avoid nesting it with LocoBase::stateMutex.
+	const bool freeOK = locoBase->CheckFreeingTrack(trackID);
+	if (!freeOK)
+	{
+		return nullptr;
+	}
+
+	return locoBase->GetLogger();
 }
 
 
@@ -2139,12 +2139,18 @@ void Manager::FeedbackPublishState(const Feedback* feedback)
 	const string& feedbackName = feedback->GetName();
 	logger->Info(state ? Languages::TextFeedbackStateIsOn : Languages::TextFeedbackStateIsOff, feedbackName);
 	const FeedbackID feedbackID = feedback->GetID();
+	std::vector<ControlInterface*> controlSnapshot;
 	{
 		std::lock_guard<std::mutex> guard(controlMutex);
 		for (auto& control : controls)
 		{
-			control.second->FeedbackState(feedbackName, feedbackID, state);
+			controlSnapshot.push_back(control.second);
 		}
+	}
+	// Invoke controls outside controlMutex; callbacks may call back into Manager.
+	for (ControlInterface* control : controlSnapshot)
+	{
+		control->FeedbackState(feedbackName, feedbackID, state);
 	}
 }
 
@@ -4571,12 +4577,18 @@ void Manager::TrackSetLocoOrientation(const TrackID trackID, const Orientation o
 
 void Manager::TrackPublishState(const DataModel::Track* track)
 {
+	std::vector<ControlInterface*> controlSnapshot;
 	{
 		std::lock_guard<std::mutex> guard(controlMutex);
 		for (auto& control : controls)
 		{
-			control.second->TrackState(track);
+			controlSnapshot.push_back(control.second);
 		}
+	}
+	// Invoke controls outside controlMutex; callbacks may call back into Manager.
+	for (ControlInterface* control : controlSnapshot)
+	{
+		control->TrackState(track);
 	}
 	vector<Track*> extensions = track->GetExtensions();
 	for (Track* extension : extensions)
@@ -4602,10 +4614,18 @@ bool Manager::LocoDestinationReached(const ObjectIdentifier& locoIdentifier,
 	const TrackID trackID,
 	const string& trackName)
 {
-	std::lock_guard<std::mutex> guard(controlMutex);
-	for (auto& control : controls)
+	std::vector<ControlInterface*> controlSnapshot;
 	{
-		control.second->LocoBaseDestinationReached(locoIdentifier, locoName, routeID, routeName, trackID, trackName);
+		std::lock_guard<std::mutex> guard(controlMutex);
+		for (auto& control : controls)
+		{
+			controlSnapshot.push_back(control.second);
+		}
+	}
+	// Invoke controls outside controlMutex; callbacks may call back into Manager.
+	for (ControlInterface* control : controlSnapshot)
+	{
+		control->LocoBaseDestinationReached(locoIdentifier, locoName, routeID, routeName, trackID, trackName);
 	}
 	return true;
 }
@@ -5542,12 +5562,18 @@ void Manager::DebounceWorker()
 	logger->Info(Languages::TextDebounceThreadStarted);
 	while (debounceRun)
 	{
+		std::vector<Feedback*> feedbackSnapshot;
 		{
 			std::lock_guard<std::mutex> guard(feedbackMutex);
 			for (auto& feedback : feedbacks)
 			{
-				feedback.second->Debounce();
+				feedbackSnapshot.push_back(feedback.second);
 			}
+		}
+		// Debounce feedback outside feedbackMutex; debounce can publish and update tracks.
+		for (Feedback* feedback : feedbackSnapshot)
+		{
+			feedback->Debounce();
 		}
 		Utils::Utils::SleepForMilliseconds(250);
 	}

@@ -336,7 +336,6 @@ class Manager
 		void FeedbackState(const FeedbackID feedbackID, const DataModel::Feedback::FeedbackState state);
 		void FeedbackPublishState(const DataModel::Feedback* feedback);
 		DataModel::Feedback* GetFeedback(const FeedbackID feedbackID) const;
-		DataModel::Feedback* GetFeedbackUnlocked(const FeedbackID feedbackID) const;
 		const std::string& GetFeedbackName(const FeedbackID feedbackID) const;
 
 		inline const std::map<FeedbackID,DataModel::Feedback*>& FeedbackList() const
@@ -854,6 +853,8 @@ class Manager
 			const FeedbackPin pin,
 			const FeedbackDevice device,
 			const FeedbackBus bus) const;
+
+		DataModel::Feedback* GetFeedbackUnlocked(const FeedbackID feedbackID) const;
 
 		DataModel::Signal* GetSignal(const ControlID controlID, const Protocol protocol, const Address address) const;
 
